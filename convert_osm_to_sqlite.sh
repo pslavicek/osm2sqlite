@@ -37,7 +37,13 @@ function import_file() {
     TABLE=$1
     rm -f fifo
     mkfifo fifo
-    ( pv -N "importing $TABLE" ${TABLE}.tsv.gz | zcat > fifo ) &
+    if [[ $TABLE = 'node_tags' ]] ; then
+       INPUTFILTER="| grep '^[0-9]*[[:space:]]'"
+    else
+       INPUTFILTER=""
+    fi
+    COMMAND="pv -N \"importing $TABLE\" ${TABLE}.tsv.gz | zcat $INPUTFILTER > fifo"
+    ( eval $COMMAND ) &
     if [[ $DUPE = 0 ]] ; then
         if [[ $NEW = 1 ]] ; then
             echo -e ".separator \"\\\t\"\n.import fifo $TABLE" | sqlite3 ${DATABASE_FILE}
