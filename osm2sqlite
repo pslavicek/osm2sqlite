@@ -1,7 +1,6 @@
 #! /bin/bash
 
 set -o nounset
-set -o errexit
 
 ROOT=$(dirname $0)
 
@@ -18,19 +17,27 @@ while getopts "rDo:d:" FLAG ; do
 
 done
 
+
+dpkg -l pv sqlite3 >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+	echo "some packages is not installed!"
+	echo "sudo apt-get install pv sqlite3"
+	exit 1;
+fi;
+
+set -o errexit
+
 if [[ $NEW = 1 ]] ; then
     rm -f ${DATABASE_FILE}
-    sqlite3 ${DATABASE_FILE} < ${ROOT}/create_database.sql
+    sqlite3 ${DATABASE_FILE} < ${ROOT}/inc/create_database.sql
 fi
 
 # TODO check if file is bzipped and unzip it
 
-# TODO check if pv is not installed and use cat instead
-
-pv -N "extracting from osm" ${OSM_FILE} | python ${ROOT}/osm2tsvs.py
+pv -N "extracting from osm" ${OSM_FILE} | python ${ROOT}/inc/osm2tsvs.py
 
 if [[ $DUPE = 1 ]] ; then
-    sqlite3 ${DATABASE_FILE} < ${ROOT}/create_tmp_database.sql
+    sqlite3 ${DATABASE_FILE} < ${ROOT}/inc/create_tmp_database.sql
 fi
 
 function import_file() {
